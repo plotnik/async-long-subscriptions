@@ -18,23 +18,12 @@ A Spring Boot application demonstrating subscription management with synchronize
 
 ## Getting Started
 
-1. Clone the repository:
-```bash
-git clone https://github.com/YOUR_USERNAME/subscription-service.git
-cd subscription-service
-```
-
-2. Build the project:
-```bash
-mvn clean install
-```
-
-3. Run the application:
+1. Run the application:
 ```bash
 mvn spring-boot:run
 ```
 
-4. Open your browser and navigate to:
+2. Open your browser and navigate to:
 ```
 http://localhost:8080
 ```
