@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Subscription Service</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .subscription-option {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+            display: none;
+        }
+        .success {
+            background-color: #dff0d8;
+            color: #3c763d;
+        }
+        .error {
+            background-color: #f2dede;
+            color: #a94442;
+        }
+        .processing {
+            background-color: #fcf8e3;
+            color: #8a6d3b;
+        }
+        .loader {
+            display: none;
+            border: 4px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 4px solid #3498db;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <h1>Subscription Plans</h1>
+    <div class="subscription-options">
+        <div class="subscription-option">
+            <input type="radio" id="plan1" name="subscription" value="1" checked>
+            <label for="plan1">1 Month Plan</label>
+        </div>
+        <div class="subscription-option">
+            <input type="radio" id="plan3" name="subscription" value="3">
+            <label for="plan3">3 Months Plan</label>
+        </div>
+        <div class="subscription-option">
+            <input type="radio" id="plan6" name="subscription" value="6">
+            <label for="plan6">6 Months Plan</label>
+        </div>
+    </div>
+    <div id="loader" class="loader"></div>
+    <div id="status" class="status"></div>
+
+    <script>
+        let currentPlan = 1;
+        let previousPlan = currentPlan;
+        let isProcessing = false;
+
+        function showStatus(message, type) {
+            const status = $('#status');
+            status.removeClass('success error processing').addClass(type);
+            status.text(message).show();
+            console.log(message);
+        }
+
+        function setLoading(loading) {
+            isProcessing = loading;
+            $('#loader').css('display', loading ? 'block' : 'none');
+            $('.subscription-option input').prop('disabled', loading);
+        }
+
+        function handleSubscriptionChange(newPlan) {
+            if (newPlan === currentPlan) {
+                showStatus('Already on ' + newPlan + ' months plan', 'success');
+                return;
+            }
+
+            if (isProcessing) {
+                showStatus('Please wait for subscribing to ' + previousPlan + ' months plan to complete before changing to ' + newPlan + ' months plan', 'error');
+                $('input[value="' + previousPlan + '"]').prop('checked', true);
+                return;
+            }
+
+            setLoading(true);
+            previousPlan = newPlan;
+            showStatus('Processing ' + currentPlan + ' to ' + newPlan + ' months subscription change...', 'processing');
+
+            // First unsubscribe from current plan
+            $.ajax({
+                url: '/api/subscription/unsubscribe/' + currentPlan,
+                method: 'POST',
+                success: function() {
+                    // Then subscribe to new plan
+                    $.ajax({
+                        url: '/api/subscription/subscribe/' + newPlan,
+                        method: 'POST',
+                        success: function() {
+                            currentPlan = newPlan;
+                            showStatus('Successfully changed to ' + newPlan + ' months plan', 'success');
+                            setLoading(false);
+                        },
+                        error: function() {
+                            showStatus('Error subscribing to new plan', 'error');
+                            setLoading(false);
+                        }
+                    });
+                },
+                error: function() {
+                    showStatus('Error unsubscribing from current plan', 'error');
+                    setLoading(false);
+                }
+            });
+        }
+
+        $(document).ready(function() {
+            // Initial subscription
+            handleSubscriptionChange(1);
+
+            // Handle radio button changes
+            $('input[name="subscription"]').change(function() {
+                const newPlan = parseInt($(this).val());
+                if (newPlan !== currentPlan) {
+                    handleSubscriptionChange(newPlan);
+                }
+            });
+        });
+    </script>
+</body>
+</html> 
